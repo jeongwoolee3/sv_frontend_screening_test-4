@@ -15,9 +15,45 @@ const FLOOR_Y = 450;
 
 const BouncingBallPage = () => {
   const [y, setY] = useState(80);
+  const [velocity, setVelocity] = useState(0);
   const [isDropping, setIsDropping] = useState(false);
   const [gravityName, setGravityName] =
     useState<keyof typeof GRAVITY_PRESETS>('지구');
+  const pressTimestamps = useRef<number[]>([]);
+
+  const gravity = GRAVITY_PRESETS[gravityName];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+
+      const now = Date.now();
+      pressTimestamps.current.push(now);
+      pressTimestamps.current = pressTimestamps.current.filter(
+        (t) => now - t < 600
+      );
+      const count = pressTimestamps.current.length;
+
+      if (count === 2) {
+        if (!isDropping && y < FLOOR_Y - 20) {
+          setVelocity(0);
+          setIsDropping(true);
+        }
+      } else if (count >= 3) {
+        reset();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDropping, y]);
+
+  const reset = () => {
+    setY(80);
+    setVelocity(0);
+    setIsDropping(false);
+    pressTimestamps.current = [];
+  };
 
   return (
     <div
@@ -57,7 +93,6 @@ const BouncingBallPage = () => {
           minHeight: 0,
         }}
       >
-        {/* 왼쪽: Stage */}
         <div
           style={{
             display: 'inline-block',
@@ -76,11 +111,37 @@ const BouncingBallPage = () => {
                 'linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%)',
             }}
           >
-            <Layer></Layer>
+            <Layer>
+              <Rect
+                x={0}
+                y={0}
+                width={STAGE_WIDTH}
+                height={FLOOR_Y}
+                fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+                fillLinearGradientEndPoint={{ x: 0, y: FLOOR_Y }}
+                fillLinearGradientColorStops={[0, '#87CEEB', 1, '#98FB98']}
+              />
+
+              <Rect
+                x={0}
+                y={FLOOR_Y}
+                width={STAGE_WIDTH}
+                height={STAGE_HEIGHT - FLOOR_Y}
+                fill="#8B7355"
+              />
+              <Circle
+                x={STAGE_WIDTH / 2}
+                y={y}
+                radius={20}
+                fill="#FF6B6B"
+                shadowBlur={8}
+                shadowColor="rgba(0,0,0,0.3)"
+                stroke="#FF4444"
+                strokeWidth={2}
+              />
+            </Layer>
           </Stage>
         </div>
-
-        {/* 오른쪽: 컨트롤 패널 */}
         <div
           style={{
             background: 'white',
@@ -106,6 +167,92 @@ const BouncingBallPage = () => {
           >
             실험 설정
           </h3>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label
+              style={{
+                display: 'block',
+                color: '#555',
+                fontSize: '1em',
+                fontWeight: 'bold',
+                marginBottom: '8px',
+              }}
+            >
+              중력 환경 선택
+            </label>
+
+            <select
+              value={gravityName}
+              onChange={(e) =>
+                setGravityName(e.target.value as keyof typeof GRAVITY_PRESETS)
+              }
+              style={{
+                width: '100%',
+                fontSize: '1em',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '2px solid #ddd',
+                background: 'white',
+                color: '#333',
+                cursor: 'pointer',
+              }}
+            >
+              {Object.entries(GRAVITY_PRESETS).map(([name, g]) => (
+                <option key={name} value={name}>
+                  {name} (중력: {g} m/s²)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div
+            style={{
+              background: '#f8f9fa',
+              borderRadius: '10px',
+              padding: '15px',
+              border: '1px solid #e9ecef',
+              marginBottom: '15px',
+            }}
+          >
+            <h4
+              style={{
+                color: '#333',
+                margin: '0 0 12px 0',
+                fontSize: '1em',
+              }}
+            >
+              조작법
+            </h4>
+
+            <div
+              style={{
+                color: '#666',
+                lineHeight: '1.5',
+                fontSize: '0.9em',
+              }}
+            >
+              <div style={{ marginBottom: '6px' }}>
+                <strong>스페이스바 2번:</strong> 공 떨어뜨리기
+              </div>
+              <div>
+                <strong>스페이스바 3번:</strong> 실험 초기화
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: '12px',
+              background: isDropping ? '#ffebee' : '#e8f5e8',
+              borderRadius: '8px',
+              textAlign: 'center',
+              color: isDropping ? '#c62828' : '#2e7d32',
+              fontWeight: 'bold',
+              fontSize: '0.95em',
+            }}
+          >
+            {isDropping ? ' 낙하 중...' : '대기 중'}
+          </div>
         </div>
       </div>
     </div>
