@@ -19,6 +19,13 @@ const CANVAS_WIDTH = 880;
 const CANVAS_HEIGHT = 80;
 
 const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
+  const [selectedVehicle, setSelectedVehicle] =
+    useState<AnalyzedVehicle | null>(null);
+  const [popupPosition, setPopupPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   const analysis = useMemo(() => {
     if (!road) return null;
     return analyzeRoadVision(road.vehicles, road.observer, road.length);
@@ -42,6 +49,42 @@ const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
       return Math.max(0.3, vehicle.visibilityRatio);
     }
     return 1.0;
+  }, []);
+
+  const handleVehicleClick = useCallback(
+    (vehicle: AnalyzedVehicle, event: any) => {
+      const stage = event.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+
+      if (pointerPosition) {
+        setSelectedVehicle(vehicle);
+        setPopupPosition({
+          x: pointerPosition.x,
+          y: pointerPosition.y,
+        });
+      }
+    },
+    []
+  );
+
+  const handleStageClick = useCallback((event: any) => {
+    if (event.target === event.target.getStage()) {
+      setSelectedVehicle(null);
+      setPopupPosition(null);
+    }
+  }, []);
+
+  const getVisionStatusText = useCallback((status: VisionStatus): string => {
+    switch (status) {
+      case VisionStatus.FULLY_VISIBLE:
+        return '완전히 보임';
+      case VisionStatus.FULLY_HIDDEN:
+        return '완전히 숨겨짐';
+      case VisionStatus.PARTIALLY_VISIBLE:
+        return '부분적으로 보임';
+      default:
+        return '알 수 없음';
+    }
   }, []);
 
   if (!analysis) {
@@ -68,6 +111,7 @@ const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
             width={CANVAS_WIDTH}
             height={CANVAS_HEIGHT}
             className="border-2 border-gray-300 rounded-lg shadow-lg bg-white"
+            onClick={handleStageClick}
           >
             <Layer>
               <Rect
@@ -152,9 +196,9 @@ const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
                       ? 1
                       : 0
                   }
-                  listening={
-                    vehicle.visionStatus === VisionStatus.PARTIALLY_VISIBLE
-                  }
+                  listening={true}
+                  onClick={(e) => handleVehicleClick(vehicle, e)}
+                  onTap={(e) => handleVehicleClick(vehicle, e)}
                 />
               ))}
 
@@ -175,6 +219,84 @@ const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
               />
             </Layer>
           </Stage>
+
+          {/* 팝업 */}
+          {selectedVehicle && popupPosition && (
+            <div
+              className="absolute bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-10 min-w-[200px]"
+              style={{
+                left: Math.min(popupPosition.x + 10, CANVAS_WIDTH - 220),
+                top: Math.min(popupPosition.y - 10, CANVAS_HEIGHT - 120),
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-lg text-gray-800">
+                  차량 #{selectedVehicle.id}
+                </h3>
+                <button
+                  onClick={() => {
+                    setSelectedVehicle(null);
+                    setPopupPosition(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 text-xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">시야 상태:</span>
+                  <span
+                    className={`font-medium ${
+                      selectedVehicle.visionStatus ===
+                      VisionStatus.FULLY_VISIBLE
+                        ? 'text-green-600'
+                        : selectedVehicle.visionStatus ===
+                          VisionStatus.FULLY_HIDDEN
+                        ? 'text-red-600'
+                        : 'text-blue-600'
+                    }`}
+                  >
+                    {getVisionStatusText(selectedVehicle.visionStatus)}
+                  </span>
+                </div>
+
+                {selectedVehicle.visionStatus ===
+                  VisionStatus.PARTIALLY_VISIBLE && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">가시성 비율:</span>
+                    <span className="font-medium text-blue-600">
+                      {(selectedVehicle.visibilityRatio * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between">
+                  <span className="text-gray-600">위치:</span>
+                  <span className="font-medium">
+                    ({selectedVehicle.position.x.toFixed(1)},{' '}
+                    {selectedVehicle.position.y.toFixed(1)})
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-600">크기:</span>
+                  <span className="font-medium">
+                    {selectedVehicle.width.toFixed(1)} ×{' '}
+                    {selectedVehicle.length.toFixed(1)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-600">속도:</span>
+                  <span className="font-medium">
+                    {selectedVehicle.speed.toFixed(1)} m/s
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {analysis && <ObserverOverviewPanel analysis={analysis} />}
