@@ -67,7 +67,7 @@ const VehiclePopup: React.FC<VehiclePopupProps> = ({
           <div className="flex justify-between">
             <span className="text-gray-600">가시성 비율:</span>
             <span className="font-medium text-blue-600">
-              {(vehicle.visibilityRatio * 100).toFixed(1)}%
+              {vehicle.visibilityRatio * 100}%
             </span>
           </div>
         )}
