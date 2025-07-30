@@ -9,6 +9,14 @@ const GRAVITY_PRESETS = {
   화성: 3.7,
 } as const;
 
+const ELASTICITY_PRESETS = {
+  고무공: 0.9,
+  테니스공: 0.7,
+  농구공: 0.8,
+  탁구공: 0.85,
+  점토: 0.1,
+} as const;
+
 const STAGE_CONFIG = {
   WIDTH: 400,
   HEIGHT: 500,
@@ -20,18 +28,23 @@ const PHYSICS_CONFIG = {
   PIXEL_PER_METER: 50,
   BALL_RADIUS: 20,
   INITIAL_Y: 80,
+  MIN_BOUNCE_VELOCITY: 2, // 최소 튀는 속도 (이하로 떨어지면 멈춤)
 };
 
 type GravityName = keyof typeof GRAVITY_PRESETS;
+type ElasticityName = keyof typeof ELASTICITY_PRESETS;
 
 const BouncingBallPage = () => {
   const [y, setY] = useState(PHYSICS_CONFIG.INITIAL_Y);
   const [velocity, setVelocity] = useState(0);
   const [isDropping, setIsDropping] = useState(false);
   const [gravityName, setGravityName] = useState<GravityName>('지구');
+  const [elasticityName, setElasticityName] =
+    useState<ElasticityName>('고무공');
   const pressTimestamps = useRef<number[]>([]);
 
   const gravity = GRAVITY_PRESETS[gravityName];
+  const elasticity = ELASTICITY_PRESETS[elasticityName];
 
   const reset = useCallback(() => {
     setY(PHYSICS_CONFIG.INITIAL_Y);
@@ -52,24 +65,44 @@ const BouncingBallPage = () => {
     if (!isDropping) return;
 
     const animate = () => {
-      setVelocity((v) => v + gravity * PHYSICS_CONFIG.TIME_SCALE);
-      setY((prevY) => {
-        const deltaY =
-          velocity * PHYSICS_CONFIG.TIME_SCALE * PHYSICS_CONFIG.PIXEL_PER_METER;
-        const nextY = prevY + deltaY;
-        const floorPosition = STAGE_CONFIG.FLOOR_Y - PHYSICS_CONFIG.BALL_RADIUS;
+      setVelocity((currentVelocity) => {
+        const newVelocity =
+          currentVelocity + gravity * PHYSICS_CONFIG.TIME_SCALE;
 
-        if (nextY >= floorPosition) {
-          setIsDropping(false);
-          return floorPosition;
-        }
-        return nextY;
+        setY((prevY) => {
+          const deltaY =
+            newVelocity *
+            PHYSICS_CONFIG.TIME_SCALE *
+            PHYSICS_CONFIG.PIXEL_PER_METER;
+          const nextY = prevY + deltaY;
+          const floorPosition =
+            STAGE_CONFIG.FLOOR_Y - PHYSICS_CONFIG.BALL_RADIUS;
+
+          // 바닥 충돌 검사
+          if (nextY >= floorPosition && newVelocity > 0) {
+            const bounceVelocity = -newVelocity * elasticity;
+
+            // 최소 속도 이하면 정지
+            if (Math.abs(bounceVelocity) < PHYSICS_CONFIG.MIN_BOUNCE_VELOCITY) {
+              setVelocity(0);
+              setIsDropping(false);
+              return floorPosition;
+            }
+
+            setVelocity(bounceVelocity);
+            return floorPosition;
+          }
+
+          return Math.min(nextY, floorPosition);
+        });
+
+        return newVelocity;
       });
     };
 
     const animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, [y, isDropping, gravity, velocity]);
+  }, [y, isDropping, gravity, velocity, elasticity]);
 
   // 키보드 이벤트 핸들링
   useEffect(() => {
@@ -139,7 +172,7 @@ const BouncingBallPage = () => {
             실험 설정
           </h3>
 
-          <div className="mb-5">
+          <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">
               중력 환경 선택
             </label>
@@ -151,6 +184,24 @@ const BouncingBallPage = () => {
               {Object.entries(GRAVITY_PRESETS).map(([name, g]) => (
                 <option key={name} value={name}>
                   {name} (중력: {g} m/s²)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-5">
+            <label className="block text-gray-700 font-semibold mb-2">
+              공의 재질 선택
+            </label>
+            <select
+              value={elasticityName}
+              onChange={(e) =>
+                setElasticityName(e.target.value as ElasticityName)
+              }
+              className="w-full p-3 text-gray-800 bg-white border-2 border-gray-300 rounded-lg cursor-pointer focus:border-blue-500 focus:outline-none transition-colors"
+            >
+              {Object.entries(ELASTICITY_PRESETS).map(([name, coeff]) => (
+                <option key={name} value={name}>
+                  {name} (탄성: {coeff})
                 </option>
               ))}
             </select>
