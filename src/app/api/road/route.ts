@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Road, Vehicle, Observer } from '@/types/road-observer.type';
 import { ROAD_LENGTH, ROAD_WIDTH } from '@/consts/road-observer.const';
 
-const CENTER_LINE_RANGE = [ROAD_WIDTH - 4, ROAD_WIDTH + 4];
+const CENTER_LINE_RANGE = [ROAD_WIDTH / 2 - 2, ROAD_WIDTH / 2 + 2];
 const INITIAL_VEHICLE_COUNT = 100;
 const FRAME_RATE = 30; // 10 ~ 120 FPS
 const ANIMATION_SPEED = (30 / FRAME_RATE) * 0.1;
@@ -134,7 +134,7 @@ export async function GET({ signal }: Request) {
       signal.addEventListener('abort', () => {
         clearInterval(intervalId);
         controller.close();
-      })
+      });
 
       return () => clearInterval(intervalId);
     },
