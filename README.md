@@ -1,24 +1,92 @@
-## StradVision Frontend Screening Test
+# StradVision Frontend Screening Test
 
-### Overview
+## 프로젝트 개요
 
-This project is a boilerplate for StradVision Frontend screening test. It provides a starting point for candidates to showcase their frontend development skills. The boilerplate includes a basic folder structure, configuration files, and some initial code setup. Candidates can build upon this boilerplate to complete the screening test tasks and demonstrate their abilities in HTML, CSS, and JavaScript. Good luck with the test👍
+이 프로젝트는 StradVision 프론트엔드 개발자 과제전형입니다.
 
-### Getting Started
+## 주요 기능
 
-Follow these instructions to set up and run the project.
+### 1. Bouncing Ball (공 튀기기 실험)
 
-#### Prerequisites
+초등학생을 위한 간단한 낙하 실험 시뮬레이션입니다.
 
-- Node.js (version > 20) and npm installed on your machine.
+**기능**:
 
-#### Steps
+- 스페이스바 더블 클릭: 공 떨어뜨리기
+- 스페이스바 트리플 클릭: 실험 초기화
+- 탄성계수 선택 (고무, 플라스틱, 금속)
+- 실시간 물리 시뮬레이션 (중력, 탄성 충돌)
 
-1. Clone the repository.
-2. Install the dependencies
-3. Run the development server
+### 2. Road Observer (도로 감시 시스템)
 
-### Submission
+드론을 이용한 도로 위 차량들의 시야각 분석 시스템입니다.
 
-- Ensure your code is clean, well-documented, and follows best practices.
-- Submit the project repository link or zip file and any additional notes in the README.md.
+**주요 기능**:
+
+- **시야각 분석**: 178도 시야각 내 차량 상태 분류
+
+  - 완전히 보이는 차량 (초록색, 100% 가시성)
+  - 완전히 숨겨진 차량 (빨간색, 0% 가시성)
+  - 부분적으로 보이는 차량 (파란색, 가시성 비율에 따른 투명도 적용)
+
+- **정확한 가시성 계산**:
+
+  - 차량 사각형과 시야각 경계선의 교차 면적 계산
+  - 실제 면적 비율 기반의 가시성 측정
+  - Shoelace 공식을 활용한 다각형 면적 계산
+
+- **인터랙티브 UI**:
+
+  - 차량 클릭 시 상세 정보 팝업 표시
+  - 가시성 비율, 위치, 크기, 속도 정보 제공
+  - 실시간 차량 데이터 스트리밍 (Server-Sent Events)
+
+- **2D 시각화**: React Konva를 활용한 실시간 렌더링
+
+## 기술 스택
+
+**Frontend**: React 18, TypeScript
+**Framework**: Next.js 14 (App Router)
+**Styling**: Tailwind CSS
+**Canvas**: React Konva (2D 그래픽)
+**Real-time**: Server-Sent Events (SSE)
+
+## 핵심 구현 사항
+
+### 물리 시뮬레이션 (Bouncing Ball)
+
+**중력 시뮬레이션**:
+
+- 중력 가속도: 9.8 m/s²
+- 탄성 충돌: 속도 반전 + 탄성계수 적용
+- 자연스러운 정지: 최소 속도 이하 시 정지
+- 실시간 애니메이션: requestAnimationFrame 사용
+
+### 시야각 분석 알고리즘 (Road Observer)
+
+**기본 가시성 판단**:
+
+- 차량의 4개 모서리가 모두 시야각 내부: 완전히 보임 (100%)
+- 차량의 4개 모서리가 모두 시야각 외부: 완전히 숨겨짐 (0%)
+- 일부 모서리만 시야각 내부: 부분적으로 보임
+
+**정확한 면적 계산** (부분 가시 차량만):
+
+1. 차량 사각형과 시야각 경계선의 교점 계산
+2. 시야각 내부에 있는 차량 꼭짓점 식별
+3. 교차 영역의 다각형 생성
+4. Shoelace 공식으로 실제 면적 계산
+5. 가시성 비율 = 교차 면적 / 전체 차량 면적
+
+**시각적 표현**:
+
+- 가시성 비율에 따른 투명도 적용
+- 실시간 색상 변화 (초록/빨강/파랑)
+
+### 사용자 인터페이스
+
+**에러 처리**:
+
+- SSE 연결 실패 시 재연결 로직
+- 로딩 상태 표시
+- 데이터 무결성 검증
