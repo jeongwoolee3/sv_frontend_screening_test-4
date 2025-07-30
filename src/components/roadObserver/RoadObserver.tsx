@@ -10,6 +10,7 @@ import {
 import { analyzeRoadVision } from '@/utils/vision-analyzer';
 import { ROAD_WIDTH, ROAD_LENGTH } from '@/consts/road-observer.const';
 import ObserverOverviewPanel from './OverViewPanel';
+import VehiclePopup from './VehiclePopup';
 
 interface RoadObserverProps {
   road: Road | null;
@@ -74,17 +75,9 @@ const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
     }
   }, []);
 
-  const getVisionStatusText = useCallback((status: VisionStatus): string => {
-    switch (status) {
-      case VisionStatus.FULLY_VISIBLE:
-        return '완전히 보임';
-      case VisionStatus.FULLY_HIDDEN:
-        return '완전히 숨겨짐';
-      case VisionStatus.PARTIALLY_VISIBLE:
-        return '부분적으로 보임';
-      default:
-        return '알 수 없음';
-    }
+  const handlePopupClose = useCallback(() => {
+    setSelectedVehicle(null);
+    setPopupPosition(null);
   }, []);
 
   if (!analysis) {
@@ -222,80 +215,13 @@ const RoadObserver: React.FC<RoadObserverProps> = ({ road }) => {
 
           {/* 팝업 */}
           {selectedVehicle && popupPosition && (
-            <div
-              className="absolute bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-10 min-w-[200px]"
-              style={{
-                left: Math.min(popupPosition.x + 10, CANVAS_WIDTH - 220),
-                top: Math.min(popupPosition.y - 10, CANVAS_HEIGHT - 120),
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-lg text-gray-800">
-                  차량 #{selectedVehicle.id}
-                </h3>
-                <button
-                  onClick={() => {
-                    setSelectedVehicle(null);
-                    setPopupPosition(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 text-xl"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">시야 상태:</span>
-                  <span
-                    className={`font-medium ${
-                      selectedVehicle.visionStatus ===
-                      VisionStatus.FULLY_VISIBLE
-                        ? 'text-green-600'
-                        : selectedVehicle.visionStatus ===
-                          VisionStatus.FULLY_HIDDEN
-                        ? 'text-red-600'
-                        : 'text-blue-600'
-                    }`}
-                  >
-                    {getVisionStatusText(selectedVehicle.visionStatus)}
-                  </span>
-                </div>
-
-                {selectedVehicle.visionStatus ===
-                  VisionStatus.PARTIALLY_VISIBLE && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">가시성 비율:</span>
-                    <span className="font-medium text-blue-600">
-                      {(selectedVehicle.visibilityRatio * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between">
-                  <span className="text-gray-600">위치:</span>
-                  <span className="font-medium">
-                    ({selectedVehicle.position.x.toFixed(1)},{' '}
-                    {selectedVehicle.position.y.toFixed(1)})
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-gray-600">크기:</span>
-                  <span className="font-medium">
-                    {selectedVehicle.width.toFixed(1)} ×{' '}
-                    {selectedVehicle.length.toFixed(1)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-gray-600">속도:</span>
-                  <span className="font-medium">
-                    {selectedVehicle.speed.toFixed(1)} m/s
-                  </span>
-                </div>
-              </div>
-            </div>
+            <VehiclePopup
+              vehicle={selectedVehicle}
+              position={popupPosition}
+              onClose={handlePopupClose}
+              canvasWidth={CANVAS_WIDTH}
+              canvasHeight={CANVAS_HEIGHT}
+            />
           )}
         </div>
       </div>
