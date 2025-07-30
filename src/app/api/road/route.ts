@@ -125,7 +125,7 @@ export async function GET({ signal }: Request) {
           const road = simulation.update();
           controller.enqueue(`data: ${JSON.stringify(road)}\n\n`);
         } catch (error) {
-          console.error('Error in SSE interval:', error);
+          // 에러 발생 시 스트림 종료
           clearInterval(intervalId);
           controller.close();
         }
