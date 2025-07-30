@@ -1,23 +1,44 @@
 'use client';
+
+import React, { useState } from 'react';
 import useRoadStream from '@/hooks/useRoadStream.hook';
-import { Stage, Layer, Rect, Circle, Text } from 'react-konva';
+import RoadObserver from '@/components/RoadObserver';
 
 const RoadObserverPage = () => {
-  /**
-   * You can use "useRoadStream" hook or modify it as needed to implement this page.
-   * const { road } = useRoadStream(isPaused);
-   */
-
-  const { road } = useRoadStream(true);
-
-  console.log(road);
+  const [isPaused, setIsPaused] = useState(false);
+  const { road } = useRoadStream(isPaused);
 
   return (
-    <Stage width={window.innerWidth} height={window.innerHeight}>
-      <Layer>
-        <Rect x={0} y={0} width={100} height={100} fill="red" />
-      </Layer>
-    </Stage>
+    <div className="w-full h-screen bg-gray-100 flex flex-col">
+      <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">도로 감시 시스템</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            178도 시야각 차량 감시 - React Konva 구현
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsPaused(!isPaused)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              isPaused
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'bg-red-500 text-white hover:bg-red-600'
+            }`}
+          >
+            {isPaused ? '▶️ 재생' : '⏸️ 일시정지'}
+          </button>
+
+          <div className="text-sm text-gray-600">
+            차량 수: {road?.vehicles.length || 0}
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 p-4 flex justify-center items-center">
+        <RoadObserver road={road} />
+      </div>
+    </div>
   );
 };
 
