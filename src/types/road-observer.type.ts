@@ -53,3 +53,31 @@ export type Road = {
   width: number;
   length: number;
 };
+
+export enum VisionStatus {
+  FULLY_VISIBLE = 'fully_visible',
+  FULLY_HIDDEN = 'fully_hidden',
+  PARTIALLY_VISIBLE = 'partially_visible',
+}
+
+export type AnalyzedVehicle = Vehicle & {
+  id: string;
+  visionStatus: VisionStatus;
+  visibilityRatio: number;
+  distanceToObserver: number;
+};
+
+export type VisionAnalysis = {
+  vehicles: AnalyzedVehicle[];
+  observer: Observer;
+  fovLines: {
+    leftBoundary: {
+      start: { x: number; y: number };
+      end: { x: number; y: number };
+    };
+    rightBoundary: {
+      start: { x: number; y: number };
+      end: { x: number; y: number };
+    };
+  };
+};
