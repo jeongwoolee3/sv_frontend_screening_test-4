@@ -51,7 +51,7 @@ const BouncingBallCanvas: React.FC<BouncingBallCanvasProps> = ({
   // 물리 시뮬레이션
   useEffect(() => {
     if (!isDropping) return;
-
+    let animationId: number;
     const animate = () => {
       setVelocity((currentVelocity) => {
         const newVelocity =
@@ -86,9 +86,10 @@ const BouncingBallCanvas: React.FC<BouncingBallCanvasProps> = ({
 
         return newVelocity;
       });
+      animationId = requestAnimationFrame(animate);
     };
 
-    const animationId = requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
   }, [y, isDropping, gravity, velocity, elasticity, onStop]);
 
